@@ -1,7 +1,7 @@
 "use strict";
 
 const apiEndPoints = {
-  BASE_URL: "https://44.217.244.93:8082", // API Base url
+  BASE_URL: "http://44.217.244.93:8082", // API Base url
   CREATED_BY: "Gaurav",
   SKILL_DATA: "master/skill", // skill Data
   JOB_DATA: "master/job", // job Data
@@ -69,6 +69,12 @@ const postDataToAPI = (api, data) => {
       const success__saveData = document.querySelector(".success__saveData");
       success__saveData.style.display = "flex";
       success__saveData.innerHTML = `This is assigned SAP ID: ${data.assignedSapId} and transactionId: ${data.transactionId}`;
+      // We Need To Add Table Data Here
+      renderData();
+      const params = new URLSearchParams(window.location.search);
+      const filter = params.get("filter");
+      const column = params.get("column");
+      filterTable({}, filter, column);
     })
     .catch((error) => {
       // Handle any errors that occurred during the fetch
@@ -176,7 +182,7 @@ const generateEmployeeTable = (availableCandidatesDetails) => {
       const sapId = createTableCell(item.sapId);
       const employeeName = createTableCell(item.employeeName);
       const employeeEmail = createTableCell(item.email);
-      const employeeContactNumber = createTableCell(item.employeeName);
+      const employeeContactNumber = createTableCell(item.contactNo);
       const employeeLocation = createTableCell(item.location);
       const employeeBand = createTableCell(item.band);
       const employeeSkill = createTableCell(item.skill);
@@ -208,8 +214,13 @@ const generateEmployeeTable = (availableCandidatesDetails) => {
           selectedCandidate.push(item);
           row.classList.add("highlight");
         } else {
+          const indexItem = selectedCandidate.indexOf(item);
+          selectedCandidate.splice(indexItem, 1);
           row.classList.remove("highlight");
+          console.log('220----------',indexItem);
         }
+        console.log('selectedCandidate --->', selectedCandidate);
+        
         assignButton.disabled = !isAnyCheckboxChecked();
       });
 
@@ -217,6 +228,7 @@ const generateEmployeeTable = (availableCandidatesDetails) => {
 
       row.appendChild(checkboxCell);
       row.appendChild(sapId);
+      row.appendChild(employeeStatus);
       row.appendChild(employeeName);
       row.appendChild(employeeEmail);
       row.appendChild(employeeContactNumber);
@@ -225,8 +237,7 @@ const generateEmployeeTable = (availableCandidatesDetails) => {
       row.appendChild(employeeSkill);
       row.appendChild(employeeGrad);
       row.appendChild(employeeCollegeTier);
-      row.appendChild(employeeStatus);
-
+      
       row.appendChild(endDateCell);
       row.appendChild(actionCell);
 
@@ -236,7 +247,7 @@ const generateEmployeeTable = (availableCandidatesDetails) => {
 
 // Function to render data in the table
 const renderData = async () => {
-  dataTable.innerHTML = "";
+  
   const {
     projectCode,
     availableCandidatesDetails,
@@ -264,6 +275,7 @@ const renderData = async () => {
     leadershipDashboardDetails.noOfProjectsAvailable || 0;
 
   generateProjectListDropdown(projectCode);
+  dataTable.innerHTML = "";
   generateEmployeeTable(availableCandidatesDetails);
   generateFormList({
     data: skill,
@@ -289,6 +301,10 @@ const renderData = async () => {
     label: "job",
     value: "job",
   });
+  const params = new URLSearchParams(window.location.search);
+  const filter = params.get("filter");
+  const column = params.get("column");
+  filterTable({}, filter, column);
 };
 
 // Function to delete data
@@ -322,25 +338,61 @@ const deleteData = (uid) => {
 
 // Function to create delete button
 const createDeleteButton = (uid) => {
-  const button = document.createElement("button");
-  button.textContent = "Delete";
-  button.onclick = function () {
+  const buttonDelete = document.createElement("div");
+  buttonDelete.textContent = "Unassign Candidate";
+  buttonDelete.classList.add("btn", "btn-sm", "btn-outline-primary", "candiadte_unassign");
+  buttonDelete.onclick = function () {
     deleteData(uid);
   };
   // selectedCandidate
-  return button;
+  return buttonDelete;
 };
 
 // Function to filter the table based on input values
-function filterTable(event) {
-  const filterValue = event.target.value.trim().toLowerCase();
-  const columnNumber = event.target.parentElement.cellIndex;
+function filterTable(event, value, number) {
+  const params = new URLSearchParams(window.location.search);
+  const filter = params.get("filter");
+  const column = params.get("column");
+
+  const eventValue = event ?  event?.target?.value?.trim().toLowerCase() : null;
+  const columnvalue = event ? event?.target?.parentElement?.cellIndex: null;
+  const filterValue = eventValue ?? (value || filter);
+  const columnNumber = columnvalue ?? (number || column);
+  console.log({filterValue, value, filter, eventValue});
+  console.log({columnNumber, number, column, columnvalue});
 
   const rows = dataTable.getElementsByTagName("tr");
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    const cellValue = row.children[columnNumber].textContent.toLowerCase();
-    row.style.display = cellValue.includes(filterValue) ? "" : "none";
+ 
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const cellValue = row?.children[columnNumber]?.textContent?.toLowerCase();
+      
+      if(filterValue) {
+        row.style.display = cellValue.includes(filterValue) ? "" : "none";
+      }else{
+        row.style.display = "table-row";
+      }
+    }
+    console.log('eventValue',eventValue);
+  if(eventValue !== undefined){
+    let currentURL = window.location.protocol + "//" + window.location.host + window.location.pathname  + '';
+    // Define the query parameters as an object
+    const queryParams = {
+      filter: eventValue ?? '',
+      column: columnvalue ?? ''
+    };
+  
+    // Create a URLSearchParams object from the query parameters
+    const searchParams = new URLSearchParams(queryParams);
+    
+    // Get the current URL
+    // let currentURL = window.location.href;
+    
+    // Append the query parameters to the current URL
+    currentURL += '?' + searchParams.toString();
+    
+    // Update the browser's URL with the modified URL
+    window.history.replaceState({}, document.title, currentURL);
   }
 }
 
@@ -380,7 +432,11 @@ if (sendSelectedRowsButton) {
 
 if (filterInput.length) {
   filterInput.forEach((input) => {
-    input.addEventListener("change", (event) => filterTable(event));
+    input.addEventListener("change", (event) => {
+      event.preventDefault();
+      filterTable(event);
+      return;
+    })
   });
 }
 
@@ -398,7 +454,6 @@ const handleFormSubmit = (event) => {
 };
 
 if (assignSelectedProject) {
-  console.log("ok");
   assignSelectedProject.addEventListener("click", handleFormSubmit);
 }
 
@@ -406,8 +461,8 @@ assignSelectedProject.addEventListener("click", () => {
   let setPayload,
     sapId = [];
 
+    console.log('selectedCandidate',selectedCandidate);
   if (selectedCandidate) {
-    console.log("selectedCandidate ", selectedCandidate);
     selectedCandidate.map((project) => {
       sapId.push(project?.sapId);
     });
@@ -433,8 +488,6 @@ assignSelectedProject.addEventListener("click", () => {
       country: selectedSkills.countryDrop,
       // transactionId: 84984984,
     };
-
-    console.log("setPayload: ", setPayload);
 
     postDataToAPI(apiEndPoints.SAVE_DATA, setPayload);
   }
@@ -473,7 +526,6 @@ if (reportingMgrModalCloseButton) {
 }
 
 window.addEventListener("load", async (event) => {
-  console.log("476 My API-----------------");
   await configData();
   renderData();
 });

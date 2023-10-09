@@ -14,7 +14,7 @@ function uploadFile() {
 
   // Define the API endpoint URL
   // const apiUrl = 'https://44.217.244.93:8089/fsc/upload';
-  const apiUrl = 'https://44.217.244.93:8082/fsc/upload';
+  const apiUrl = 'http://44.217.244.93:8082/fsc/upload';
 
   // Send a POST request to the API
   fetch(apiUrl, {

@@ -27,10 +27,10 @@ const config = {
   favicon: path.join(ROOT, "/src/images/favicon.ico"),
 
   // Local development URL
-  dev_host: "localhost",
+  dev_host: "172.31.83.19",
 
   // Local development port
-  port: process.env.PORT || 8080,
+  port: process.env.PORT || 8083,
 
   // Advanced configuration, edit with caution!
   env: process.env.NODE_ENV,

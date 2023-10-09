@@ -1,5 +1,5 @@
 // const apiUrl = "http://35.169.136.179:8080/master/projectCode";
-const apiUrl = "https://44.217.244.93:8082/master/projectCode";
+const apiUrl = "http://44.217.244.93:8082/master/projectCode";
 // https://44.217.244.93:8082/master/projectCode
 const dataTable = document.getElementById("data-body");
 
